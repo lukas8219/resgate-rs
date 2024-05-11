@@ -12,12 +12,15 @@ export function useRescueAppContext(){
     const context = useContext(RescueAppContext);
     const [isNewRescueOpen, setNewRescueOpen]=useState<boolean>(false);
     const [maxDistance, setMaxDistance]=useState<number>(500);
+    const [isUsingCurrentLocation, setUsingCurrentLocation]=useState<boolean>(true);
 
     return {
         isNewRescueOpen,
         setNewRescueOpen,
         currentRangeInMeters: maxDistance,
         setMaxDistance,
+        isUsingCurrentLocation,
+        setUsingCurrentLocation,
         ...context,
     };
 }

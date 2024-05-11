@@ -3,12 +3,12 @@ import { GoogleMap, MarkerF, useLoadScript } from '@react-google-maps/api';
 import type { NextPage } from 'next';
 import { useMemo } from 'react';
 import { useListPersons } from '@/hooks/persons/persons.hook';
-import { Slider } from '@nextui-org/react';
+import { Slider, Switch } from '@nextui-org/react';
 import { useRescueAppContext } from '@/app/context/app.context';
 
 const MapComponent: NextPage = () => {
     const { data: { response } } = useListPersons();
-    const { currentRangeInMeters, setMaxDistance } = useRescueAppContext();
+    const { currentRangeInMeters, setMaxDistance, isUsingCurrentLocation, setUsingCurrentLocation } = useRescueAppContext();
 
     const nearbyPeople = response;
 
@@ -46,13 +46,13 @@ const MapComponent: NextPage = () => {
                 {nearbyPeople.map((config, index) => <MarkerF key={index} position={config.location} />)}
             </GoogleMap>
             <section
-            className='bg-white shadow-md w-[25%] rounded-lg p-4'
-            style={{
+                className='bg-white shadow-md w-[25%] rounded-lg p-4 flex flex-col gap-2 justify-center'
+                style={{
                     position: 'relative',
                     bottom: '10%',
                     left: '0px',
                     height: '10%'
-            }}
+                }}
             >
                 <Slider
                     label="Distância"
@@ -67,6 +67,14 @@ const MapComponent: NextPage = () => {
                     getValue={(value) => `${value}m`}
                     aria-label="Temperature"
                 />
+                <Switch
+                    isSelected={isUsingCurrentLocation}
+                    onValueChange={setUsingCurrentLocation}
+                >
+                    Usar minha localização
+                    { !isUsingCurrentLocation ? <p className="text-small text-default-500 relative top-100">Clique no mapa para procurar</p> : null}
+                </Switch>
+                
             </section>
 
         </div>
