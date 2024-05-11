@@ -1,13 +1,14 @@
+'use client'
+import { useRescueAppContext } from '@/app/context/app.context';
 import { ErrorMessage, Field, Form, Formik, useFormik } from 'formik';
 
 type PeoplePopupProps = {
     handleSubmit: (data: any) => void,
-    data: google.maps.LatLngLiteral | undefined,
-    isVisible: boolean,
     closePopup: () => void;
 }
 
-export function PeoplePopup({ handleSubmit, data, isVisible, closePopup  }: PeoplePopupProps) {
+export function PeoplePopup({ handleSubmit,closePopup  }: PeoplePopupProps) {
+    const { newRescuePopupData, isNewRescuePopupVisible } = useRescueAppContext()
     const formik = useFormik({
         initialValues: {
             name: '',
@@ -18,13 +19,13 @@ export function PeoplePopup({ handleSubmit, data, isVisible, closePopup  }: Peop
         onSubmit: values => {
             formik.resetForm({ values: { name: '', type: 'homem', extraInfo: '', situation: 'esperando resgate'}});
             handleSubmit({
-                location: data,
+                location: newRescuePopupData,
                 ...values,
             });
         },
     })
     return (
-            <div className={`z-[9999] ${!isVisible ? 'hidden' : ''} fixed z-50 inset-0 bg-gray-900 bg-opacity-60 overflow-y-auto h-full w-full px-4`}>
+            <div className={`z-[9999] ${!isNewRescuePopupVisible ? 'hidden' : ''} fixed z-50 inset-0 bg-gray-900 bg-opacity-60 overflow-y-auto h-full w-full px-4`}>
             <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" onSubmit={formik.handleSubmit}>
                 <div className="mb-4">
                     <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -62,9 +63,7 @@ export function PeoplePopup({ handleSubmit, data, isVisible, closePopup  }: Peop
                 <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
                     Enviar
                 </button>
-                <button className="bg-red-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onClick={closePopup}>
-                    Fechar
-                </button>
+                <input value='Fechar' type='button' className="bg-red-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onClick={closePopup}/>
             </form>
         </div>
     )

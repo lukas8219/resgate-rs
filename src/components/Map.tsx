@@ -3,16 +3,19 @@ import { useLoadScript, GoogleMap, MarkerF, InfoWindow } from '@react-google-map
 import type { NextPage } from 'next';
 import { useEffect, useMemo, useState } from 'react';
 import { PeoplePopup } from './PeoplePopup';
-
-type Rescue = { name: string, type: string, location: google.maps.LatLngLiteral };
+import { Rescue, useRescueAppContext } from '@/app/context/app.context';
 
 const MapComponent: NextPage = () => {
-    const [people, setPeople] = useState<Rescue[]>([]);
-    const [popup, setPopup] = useState<google.maps.LatLngLiteral | undefined>();
-    const libraries = useMemo(() => ['maps'], [people]);
+    const {
+        setNewRescuePopupData,
+        nearbyPeople,
+        addPeople
+     } = useRescueAppContext();
+
+    const libraries = useMemo(() => ['maps'], [nearbyPeople]);
     const mapCenter = useMemo(
-        () => (people[people.length - 1])?.location || { lat: -30.00803257303225, lng: -51.19590017596934 },
-        [people]
+        () => ({ lat: -30.00803257303225, lng: -51.19590017596934 }),
+        [nearbyPeople]
     );
 
     const mapOptions = useMemo<google.maps.MapOptions>(
@@ -21,7 +24,7 @@ const MapComponent: NextPage = () => {
             clickableIcons: false,
             scrollwheel: true,
         }),
-        [people]
+        [nearbyPeople]
     );
 
     const { isLoaded } = useLoadScript({
@@ -33,7 +36,7 @@ const MapComponent: NextPage = () => {
         function handleEscape(event: KeyboardEvent) {
             const key = event.key; // const {key} = event; in ES6+
             if (key === "Escape") {
-                setPopup(undefined);
+                setNewRescuePopupData(undefined);
             }
         }
         document.addEventListener('keydown', handleEscape);
@@ -43,8 +46,8 @@ const MapComponent: NextPage = () => {
     }, []);
 
     const handlePopupSubmit = (data: Rescue) => {
-        setPeople((people) => people.concat(data));
-        setPopup(undefined);
+        addPeople(data);
+        setNewRescuePopupData(undefined);
     }
 
     if (!isLoaded) {
@@ -59,16 +62,15 @@ const MapComponent: NextPage = () => {
                 center={mapCenter}
                 mapTypeId={google.maps.MapTypeId.ROADMAP}
                 mapContainerStyle={{ width: '100%', height: '100%' }}
-                onLoad={() => console.log('Map Component Loaded...')}
                 onClick={(clickEvent) => {
                     const position = clickEvent.latLng?.toJSON();
                     console.log(position);
-                    setPopup(position);
+                    setNewRescuePopupData(position);
                 }}
             >
-                {people.map((config, index) => <MarkerF key={index} position={config.location} />)}
+                {nearbyPeople.map((config, index) => <MarkerF key={index} position={config.location} />)}
             </GoogleMap>
-            <PeoplePopup closePopup={() => setPopup(undefined)} isVisible={!!popup} data={popup} handleSubmit={handlePopupSubmit} />
+            <PeoplePopup closePopup={() => setNewRescuePopupData(undefined)} handleSubmit={handlePopupSubmit} />
         </div>
     );
 };
