@@ -11,6 +11,8 @@
   "dependencies": {
     "@nextui-org/react": "^2.3.6",
     "@react-google-maps/api": "^2.19.3",
+    "@tanstack/react-query": "^5.35.5",
+    "@typegoose/typegoose": "^12.4.0",
     "formik": "^2.4.6",
     "framer-motion": "^11.1.9",
     "next": "14.2.3",

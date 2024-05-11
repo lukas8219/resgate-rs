@@ -1,29 +1,22 @@
 'use client'
-import { Rescue, RescueAppContext, useRescueAppContext } from "./context/app.context";
-import MapComponent from "../components/Map";
+import { RescueAppContext, useRescueAppContext } from "./context/app.context";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/hooks/persons/contexts";
+import MapComponent from "@/components/Map";
+import Sidebar from "@/components/Sidebar";
 import PeoplePopup from "@/components/PeoplePopup";
 
-function PersonCard(props: Rescue) {
-  return (<div className="bg-white shadow-md rounded-lg p-4">
-    <p>{props.name}</p>
-    <p>à {props.distanceFromMe}km</p>
-  </div>)
-}
-
 export default function Home() {
-  const context = useRescueAppContext();
+  const context = useRescueAppContext()
   return (
-    <RescueAppContext.Provider value={context}>
-      <main style={{ display: 'flex', flexDirection: 'row' }}>
-        <MapComponent />
-        <section className="flex flex-col w-[25vw]">
-          <button onClick={() => context.setNewRescueOpen(true)} className="bg-red-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Preciso de um Resgate</button>
-          <section className="m-1 gap-1 grid grid-cols-2 justify-between">
-            {...context.nearbyPeople.map((props, _index) => <PersonCard key={`person-card-${_index}`} {...props} />)}
-          </section>
-        </section>
-      </main>
-      <PeoplePopup />
-    </RescueAppContext.Provider>
+    <QueryClientProvider client={queryClient}>
+        <RescueAppContext.Provider value={context}>
+            <main style={{ display: 'flex', flexDirection: 'row' }}>
+                <MapComponent />
+                <Sidebar />
+                <PeoplePopup />
+            </main>
+        </RescueAppContext.Provider>
+    </QueryClientProvider>
   )
 }

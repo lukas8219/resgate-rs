@@ -1,20 +1,22 @@
 'use client'
 import { GoogleMap, MarkerF, useLoadScript } from '@react-google-maps/api';
-import { Rescue, useRescueAppContext } from '@/app/context/app.context';
+import { useRescueAppContext } from '@/app/context/app.context';
 import { useFormik } from 'formik';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Autocomplete, AutocompleteItem } from '@nextui-org/react';
 import { Subject, debounce, filter, interval } from 'rxjs';
+import { RescueApiData, useCreatePerson } from '@/hooks/persons/persons.hook';
 
 type PeoplePopupProps = {};
 
 export default function PeoplePopup({ }: PeoplePopupProps) {
-    const { isNewRescueOpen, setNewRescueOpen, nearbyPeople, addPeople } = useRescueAppContext()
-    const [selectedLocation, setSelectedLocation] = useState<google.maps.LatLngLiteral | undefined>();
+    const { isNewRescueOpen, setNewRescueOpen } = useRescueAppContext()
+    const [selectedLocation, setSelectedLocation] = useState<google.maps.LatLng | null>();
     const [placesService, setPlacesService] = useState<google.maps.Geocoder>();
     const [foundLocations, setSearchedLocations] = useState<any[]>([]);
+    const mutatePersons = useCreatePerson();
 
-    const observable = useMemo(() => new Subject<string>(), [selectedLocation]);
+    const observable = useMemo(() => new Subject<string>(), [selectedLocation, isNewRescueOpen]);
 
     useEffect(() => {
         observable.pipe(
@@ -32,11 +34,11 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
             })
             setSearchedLocations(() => formattedResults || []);
         })
-    })
+    }, [isNewRescueOpen])
 
     const mapCenter = useMemo(
         () => ({ lat: -30.00803257303225, lng: -51.19590017596934 }),
-        [selectedLocation]
+        [selectedLocation, isNewRescueOpen]
     );
 
     const mapOptions = useMemo<google.maps.MapOptions>(
@@ -45,40 +47,41 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
             clickableIcons: false,
             scrollwheel: true,
         }),
-        [selectedLocation]
+        [selectedLocation, isNewRescueOpen]
     );
 
-    const libraries = useMemo(() => ['maps', 'geocoding'], [selectedLocation]);
+    const libraries = useMemo(() => ['maps', 'geocoding'], [selectedLocation, isNewRescueOpen]);
     const { isLoaded } = useLoadScript({ googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY as string, libraries: libraries as any });
 
     function closePopup() {
-        setNewRescueOpen(false);
+        setNewRescueOpen!(false);
         formik.resetForm();
         setSelectedLocation(undefined);
     }
 
-    function handleSubmit(data: Rescue) {
-        addPeople(data);
+    async function handleSubmit(data: RescueApiData) {
+        await mutatePersons.mutateAsync(data);
         formik.resetForm();
         setSearchedLocations([]);
         setSelectedLocation(undefined);
-        setNewRescueOpen(false);
+        setNewRescueOpen!(false);
     }
 
     const formik = useFormik({
         initialValues: {
             name: '',
-            type: 'homem',
-            situation: 'esperando resgate',
+            type: 'male',
+            situation: 'waiting-rescue',
             extraInfo: ''
         },
         onSubmit: values => {
-            formik.resetForm({ values: { name: '', type: 'homem', extraInfo: '', situation: 'esperando resgate' } });
+            formik.resetForm({ values: { name: '', type: 'male', extraInfo: '', situation: 'waiting-rescue' } });
+            debugger;
             if (selectedLocation) {
+                const location = selectedLocation.toJSON();
                 handleSubmit({
-                    location: selectedLocation,
+                    location: [location.lat, location.lng],
                     ...values,
-                    distanceFromMe: 10,
                 });
             }
         },
@@ -95,16 +98,18 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
         return () => {
             window.removeEventListener('keydown', handleEscape);
         }
-    }, []);
+    }, [isNewRescueOpen]);
 
     const onLoad = useCallback((ref: google.maps.Map) => {
         const service = new google.maps.Geocoder();
         setPlacesService(() => service);
-    }, [selectedLocation])
+    }, [selectedLocation, isNewRescueOpen])
 
     if (!isLoaded) {
         return <p>Loading...</p>
     }
+
+    console.log('popup', isNewRescueOpen);
 
     return (
         <div className={`z-[9999] ${!isNewRescueOpen ? 'hidden' : ''} fixed z-50 inset-0 bg-gray-900 bg-opacity-60 overflow-y-auto h-full w-full px-4`}>
@@ -120,9 +125,9 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
                         Tipo de Regaste
                     </label>
                     <select name='type' value={formik.values.type} onChange={formik.handleChange} className="shadow appearance-none border border-red-500 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        <option value='homem'>Homem</option>
-                        <option value='mulher'>Mulher</option>
-                        <option value='crianca'>Criança</option>
+                        <option value='male'>Homem</option>
+                        <option value='female'>Mulher</option>
+                        <option value='child'>Criança</option>
                         <option value='animal'>Animal</option>
                     </select>
                 </div>
@@ -137,9 +142,9 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
                         Situação
                     </label>
                     <select name='situation' value={formik.values.situation} onChange={formik.handleChange} className="shadow appearance-none border border-red-500 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        <option value='esperando resgate'>Esperando Resgate</option>
-                        <option value='esperando resgate - grave'>Esperando Resgate - Grave</option>
-                        <option value='resgatado'>Resgatado</option>
+                        <option value='waiting-rescue'>Esperando Resgate</option>
+                        <option value='waiting-rescue-severe'>Esperando Resgate - Grave</option>
+                        <option value='rescued'>Resgatado</option>
                     </select>
                 </div>
                 <div className="mb-4">
@@ -153,8 +158,6 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
                             if (!current) {
                                 return;
                             }
-                            debugger;
-                            console.log(current.location);
                             setSelectedLocation(current.location);
                         }}
                         items={foundLocations}
@@ -162,7 +165,7 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
                         {(location) => <AutocompleteItem key={`${location.address}`} value={location.address}>{location.address}</AutocompleteItem>}
                     </Autocomplete>
                 </div>
-                <div className='w-[100vw] h-[50vh] p-1'>
+                <div className='w-[95vw] h-[50vh] p-1'>
                     <GoogleMap
                         options={mapOptions}
                         zoom={12}
@@ -171,7 +174,7 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
                         onLoad={onLoad}
                         mapContainerStyle={{ width: '100%', height: '100%' }}
                         onClick={(clickEvent) => {
-                            const position = clickEvent.latLng?.toJSON();
+                            const position = clickEvent.latLng;
                             setSelectedLocation(() => position);
                         }}
                     >
