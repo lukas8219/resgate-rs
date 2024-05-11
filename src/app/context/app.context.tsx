@@ -10,14 +10,7 @@ export interface RescueAppContext {
 }
 
 export const RescueAppContext = createContext<RescueAppContext>({ nearbyPeople: [
-    {
-        name: 'Lucas',
-        distanceFromMe: 10,
-        location: {
-            lat: 1,
-            lng: 1
-        }
-    }
+
 ] });
 
 export function useRescueAppContext(){

@@ -59,6 +59,10 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
 
     function handleSubmit(data: Rescue) {
         addPeople(data);
+        formik.resetForm();
+        setSearchedLocations([]);
+        setSelectedLocation(undefined);
+        setNewRescueOpen(false);
     }
 
     const formik = useFormik({
@@ -138,41 +142,47 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
                         <option value='resgatado'>Resgatado</option>
                     </select>
                 </div>
+                <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Endereço - Ajuda se for c/ número!
+                    </label>
+                    <Autocomplete
+                        onInputChange={(input) => observable.next(input)}
+                        onSelectionChange={(key) => {
+                            const current = foundLocations?.find((item) => item.address === key);
+                            if (!current) {
+                                return;
+                            }
+                            debugger;
+                            console.log(current.location);
+                            setSelectedLocation(current.location);
+                        }}
+                        items={foundLocations}
+                    >
+                        {(location) => <AutocompleteItem key={`${location.address}`} value={location.address}>{location.address}</AutocompleteItem>}
+                    </Autocomplete>
+                </div>
+                <div className='w-[100vw] h-[50vh] p-1'>
+                    <GoogleMap
+                        options={mapOptions}
+                        zoom={12}
+                        center={selectedLocation || mapCenter}
+                        mapTypeId={google.maps.MapTypeId.ROADMAP}
+                        onLoad={onLoad}
+                        mapContainerStyle={{ width: '100%', height: '100%' }}
+                        onClick={(clickEvent) => {
+                            const position = clickEvent.latLng?.toJSON();
+                            setSelectedLocation(() => position);
+                        }}
+                    >
+                        {selectedLocation ? <MarkerF position={selectedLocation} /> : null}
+                    </GoogleMap>
+                </div>
                 <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
                     Enviar
                 </button>
                 <input value='Fechar' type='button' className="bg-red-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onClick={closePopup} />
             </form>
-            <Autocomplete
-                onInputChange={(input) => observable.next(input)}
-                onSelectionChange={(key) => {
-                    const current = foundLocations?.find((item) => item.address === key);
-                    if(!current){
-                        return;
-                    }
-                    debugger;
-                    console.log(current.location);
-                    setSelectedLocation(current.location);
-                }}
-                items={foundLocations}
-            >
-                {(location) => <AutocompleteItem key={`${location.address}`} value={location.address}>{location.address}</AutocompleteItem>}
-            </Autocomplete>
-            <GoogleMap
-                mapContainerClassName='h-[50%] w-50 fixed'
-                options={mapOptions}
-                zoom={12}
-                center={selectedLocation || mapCenter}
-                mapTypeId={google.maps.MapTypeId.ROADMAP}
-                onLoad={onLoad}
-                mapContainerStyle={{ width: '100%', height: '100%' }}
-                onClick={(clickEvent) => {
-                    const position = clickEvent.latLng?.toJSON();
-                    setSelectedLocation(() => position);
-                }}
-            >
-                {selectedLocation ? <MarkerF position={selectedLocation} /> : null}
-            </GoogleMap>
         </div>
     )
 }
