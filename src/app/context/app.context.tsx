@@ -1,30 +1,27 @@
 'use client'
-import { useLoadScript } from '@react-google-maps/api';
-import { createContext, useContext, useMemo, useState } from 'react';
+import { useListPersons } from '@/hooks/persons/persons.hook';
+import { Dispatch, SetStateAction, createContext, useContext, useState } from 'react';
 
 export type Rescue = { name: string, type?: string, location: google.maps.LatLngLiteral, distanceFromMe: number };
 
 export interface RescueAppContext {
     nearbyPeople: Rescue[],
     currentRangeInMeters?: number,
+    isNewRescueOpen?: boolean,
+    setNewRescueOpen?: Dispatch<SetStateAction<boolean>>;
 }
 
-export const RescueAppContext = createContext<RescueAppContext>({ nearbyPeople: [
+export const RescueAppContext = createContext<RescueAppContext>({ nearbyPeople: []});
 
-] });
-
-export function useRescueAppContext(){
+export function useRescueAppContext(): RescueAppContext{
     const context = useContext(RescueAppContext);
     const [isNewRescueOpen, setNewRescueOpen]=useState<boolean>(false);
-
-    function addPeople(data: Rescue) {
-        context.nearbyPeople = context.nearbyPeople.concat(data);
-    }
+    const { data } = useListPersons();
 
     return {
-        addPeople,
         isNewRescueOpen,
         setNewRescueOpen,
-        ...context,
+        nearbyPeople: data.response || [],
+        currentRangeInMeters: 0,
     };
 }
