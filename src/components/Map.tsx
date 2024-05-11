@@ -5,10 +5,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useListPersons } from '@/hooks/persons/persons.hook';
 import { Slider, Switch } from '@nextui-org/react';
 import { useRescueAppContext } from '@/app/context/app.context';
+import { Subject, throttleTime } from 'rxjs';
 
 const MapComponent: NextPage = () => {
-    const { data: { response } } = useListPersons();
-    const { currentRangeInMeters, setMaxDistance, isUsingCurrentLocation, setUsingCurrentLocation, setUserLocaion, userLocation } = useRescueAppContext();
+    const { data: { response }, refetch } = useListPersons();
+    const { currentRangeInMeters, setMaxDistance, isUsingCurrentLocation, setUsingCurrentLocation, setUserLocaion, userLocation,  } = useRescueAppContext();
     const [watch, setWatch]=useState<number | null>();
 
     const nearbyPeople = response;
@@ -52,7 +53,9 @@ const MapComponent: NextPage = () => {
                 window.navigator.geolocation.clearWatch(watch as number);
                 return setUsingCurrentLocation(false);
             }
-    }, [isUsingCurrentLocation])
+    }, [isUsingCurrentLocation]);
+
+    useEffect(refetch, [userLocation, currentRangeInMeters]);
 
     if (!isLoaded) {
         return <p>Loading...</p>;
