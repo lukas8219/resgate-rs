@@ -1,7 +1,7 @@
 'use client'
 import { GoogleMap, MarkerF, useLoadScript } from '@react-google-maps/api';
 import type { NextPage } from 'next';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useListPersons } from '@/hooks/persons/persons.hook';
 import { Slider, Switch } from '@nextui-org/react';
 import { useRescueAppContext } from '@/app/context/app.context';
@@ -9,6 +9,7 @@ import { useRescueAppContext } from '@/app/context/app.context';
 const MapComponent: NextPage = () => {
     const { data: { response } } = useListPersons();
     const { currentRangeInMeters, setMaxDistance, isUsingCurrentLocation, setUsingCurrentLocation, setUserLocaion, userLocation } = useRescueAppContext();
+    const [watch, setWatch]=useState<number | null>();
 
     const nearbyPeople = response;
 
@@ -28,6 +29,30 @@ const MapComponent: NextPage = () => {
 
     const libraries = useMemo(() => ['maps', 'geocoding'] as const, [nearbyPeople]);
     const { isLoaded } = useLoadScript({ googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY as string, libraries: libraries as any });
+
+    useEffect(() => {
+            if(isUsingCurrentLocation){
+                const watchId = window.navigator.geolocation.watchPosition((position) => {
+                    setUserLocaion(() => ({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                    }))
+                    if(!isUsingCurrentLocation){
+                        setUsingCurrentLocation(true);
+                    }
+                }, (err) => {
+                    if(err){
+                        console.error(err);
+                    }
+                    setUsingCurrentLocation(false);
+                })
+                setWatch(watchId);
+            }
+            if(!isUsingCurrentLocation){
+                window.navigator.geolocation.clearWatch(watch as number);
+                return setUsingCurrentLocation(false);
+            }
+    }, [isUsingCurrentLocation])
 
     if (!isLoaded) {
         return <p>Loading...</p>;
@@ -76,22 +101,7 @@ const MapComponent: NextPage = () => {
                 />
                 <Switch
                     isSelected={isUsingCurrentLocation}
-                    onValueChange={(value) => {
-                        if(!value){
-                            return setUsingCurrentLocation(false);
-                        }
-                        if(value){
-                            window.navigator.geolocation.watchPosition((position) => {
-                                setUserLocaion(() => ({
-                                    lat: position.coords.latitude,
-                                    lng: position.coords.longitude,
-                                }))
-                                setUsingCurrentLocation(true);
-                            }, (err) => {
-                                setUsingCurrentLocation(false);
-                            })
-                        }
-                    }}
+                    onValueChange={setUsingCurrentLocation}
                 >
                     Usar minha localização
                     { !isUsingCurrentLocation ? <p className="text-small text-default-500 relative top-100">Clique no mapa para procurar</p> : null}
