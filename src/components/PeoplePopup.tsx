@@ -16,10 +16,7 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
     const [foundLocations, setSearchedLocations] = useState<any[]>([]);
     const mutatePersons = useCreatePerson();
 
-
-    console.log('popup', isNewRescueOpen);
-
-    const observable = useMemo(() => new Subject<string>(), [selectedLocation]);
+    const observable = useMemo(() => new Subject<string>(), [selectedLocation, isNewRescueOpen]);
 
     useEffect(() => {
         observable.pipe(
@@ -111,6 +108,8 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
     if (!isLoaded) {
         return <p>Loading...</p>
     }
+
+    console.log('popup', isNewRescueOpen);
 
     return (
         <div className={`z-[9999] ${!isNewRescueOpen ? 'hidden' : ''} fixed z-50 inset-0 bg-gray-900 bg-opacity-60 overflow-y-auto h-full w-full px-4`}>

@@ -3,12 +3,13 @@ import { GoogleMap, MarkerF, useLoadScript} from '@react-google-maps/api';
 import type { NextPage } from 'next';
 import { useMemo } from 'react';
 import { useRescueAppContext } from '@/app/context/app.context';
+import { useListPersons } from '@/hooks/persons/persons.hook';
 
 const MapComponent: NextPage = () => {
-    const {
-        nearbyPeople,
-     } = useRescueAppContext();
+    const { data: { response } } = useListPersons();
 
+    const nearbyPeople = response;
+    
     const mapCenter = useMemo(
         () => ({ lat: -30.00803257303225, lng: -51.19590017596934 }),
         [nearbyPeople]
