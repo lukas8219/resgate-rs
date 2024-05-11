@@ -5,6 +5,7 @@ import { queryClient } from "@/hooks/persons/contexts";
 import MapComponent from "@/components/Map";
 import Sidebar from "@/components/Sidebar";
 import PeoplePopup from "@/components/PeoplePopup";
+import { Slider } from "@nextui-org/react";
 
 export default function Home() {
   const context = useRescueAppContext()

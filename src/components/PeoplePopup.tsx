@@ -1,6 +1,6 @@
 'use client'
 import { GoogleMap, MarkerF, useLoadScript } from '@react-google-maps/api';
-import { useRescueAppContext } from '@/app/context/app.context';
+import { Rescue, useRescueAppContext } from '@/app/context/app.context';
 import { useFormik } from 'formik';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Autocomplete, AutocompleteItem } from '@nextui-org/react';
@@ -59,7 +59,7 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
         setSelectedLocation(undefined);
     }
 
-    async function handleSubmit(data: RescueApiData) {
+    async function handleSubmit(data: Rescue) {
         await mutatePersons.mutateAsync(data);
         formik.resetForm();
         setSearchedLocations([]);
@@ -80,8 +80,8 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
             if (selectedLocation) {
                 const location = selectedLocation.toJSON();
                 handleSubmit({
-                    location: [location.lat, location.lng],
                     ...values,
+                    location,
                 });
             }
         },

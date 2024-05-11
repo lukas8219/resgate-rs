@@ -1,4 +1,4 @@
-import { index, prop, getModelForClass } from "@typegoose/typegoose";
+import { index, prop, getModelForClass, mongoose } from "@typegoose/typegoose";
 
 export interface PersonLocation {
     latitude: number;
@@ -18,11 +18,11 @@ export enum PersonSituationEnum {
     Rescued = 'rescued'
 }
 
-function validateLocation(locations: [number, number]){
-    if(locations.length !== 2){
+function validateLocation(locations: GeoJsonLocation){
+    if(locations.coordinates.length !== 2){
         return false;
     }
-    const [lat,long]=locations;
+    const [lat,long]=locations.coordinates;
     if(!lat){
         return false;
     }
@@ -35,6 +35,13 @@ function validateLocation(locations: [number, number]){
 const locationValidator = {
     validator: validateLocation,
     message: 'LatLgn are wrong'
+}
+
+export class GeoJsonLocation {
+    @prop({ required: true })
+    type!: String;
+    @prop({ required: true })
+    coordinates!: [number,number]
 }
 
 @index({ geoLocation: '2dsphere' }, {})
@@ -53,7 +60,7 @@ class Person {
     public situation!: PersonSituationEnum;
 
     @prop({ required: true, validate: locationValidator })
-    public location!: [number, number]
+    public location!: GeoJsonLocation
 }
 
 const PersonModel = getModelForClass(Person);
