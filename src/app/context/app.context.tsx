@@ -1,4 +1,6 @@
-import { createContext, useContext, useState } from 'react';
+'use client'
+import { useLoadScript } from '@react-google-maps/api';
+import { createContext, useContext, useMemo, useState } from 'react';
 
 export type Rescue = { name: string, type?: string, location: google.maps.LatLngLiteral, distanceFromMe: number };
 
@@ -20,17 +22,16 @@ export const RescueAppContext = createContext<RescueAppContext>({ nearbyPeople: 
 
 export function useRescueAppContext(){
     const context = useContext(RescueAppContext);
-    const [newRescuePopupData, setNewRescuePopupData]=useState<google.maps.LatLngLiteral | undefined>();
+    const [isNewRescueOpen, setNewRescueOpen]=useState<boolean>(false);
 
     function addPeople(data: Rescue) {
         context.nearbyPeople = context.nearbyPeople.concat(data);
     }
 
     return {
-        setNewRescuePopupData,
         addPeople,
-        isNewRescuePopupVisible: newRescuePopupData !== undefined,
-        newRescuePopupData,
+        isNewRescueOpen,
+        setNewRescueOpen,
         ...context,
     };
 }

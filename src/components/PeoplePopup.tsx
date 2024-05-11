@@ -1,14 +1,42 @@
 'use client'
-import { useRescueAppContext } from '@/app/context/app.context';
-import { ErrorMessage, Field, Form, Formik, useFormik } from 'formik';
+import { GoogleMap, MarkerF, useLoadScript } from '@react-google-maps/api';
+import { Rescue, useRescueAppContext } from '@/app/context/app.context';
+import { useFormik } from 'formik';
+import { useEffect, useMemo, useState } from 'react';
 
-type PeoplePopupProps = {
-    handleSubmit: (data: any) => void,
-    closePopup: () => void;
-}
+type PeoplePopupProps = {};
 
-export function PeoplePopup({ handleSubmit,closePopup  }: PeoplePopupProps) {
-    const { newRescuePopupData, isNewRescuePopupVisible } = useRescueAppContext()
+export default function PeoplePopup({}: PeoplePopupProps) {
+    const { isNewRescueOpen, setNewRescueOpen, nearbyPeople, addPeople } = useRescueAppContext()
+    const [selectedLocation, setSelectedLocation]=useState<google.maps.LatLngLiteral | undefined>();
+
+    const mapCenter = useMemo(
+        () => ({ lat: -30.00803257303225, lng: -51.19590017596934 }),
+        [nearbyPeople]
+    );
+
+    const mapOptions = useMemo<google.maps.MapOptions>(
+        () => ({
+            disableDefaultUI: false,
+            clickableIcons: false,
+            scrollwheel: true,
+        }),
+        [nearbyPeople]
+    );
+
+    const libraries = useMemo(() => ['maps'], [nearbyPeople]);
+    const { isLoaded } = useLoadScript({ googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY as string, libraries: libraries as any });
+
+    function closePopup(){
+        setNewRescueOpen(false);
+        formik.resetForm();
+        setSelectedLocation(undefined);
+    }
+
+    function handleSubmit(data: Rescue){
+        addPeople(data);
+    }
+
     const formik = useFormik({
         initialValues: {
             name: '',
@@ -18,14 +46,35 @@ export function PeoplePopup({ handleSubmit,closePopup  }: PeoplePopupProps) {
         },
         onSubmit: values => {
             formik.resetForm({ values: { name: '', type: 'homem', extraInfo: '', situation: 'esperando resgate'}});
-            handleSubmit({
-                location: newRescuePopupData,
-                ...values,
-            });
+            if(selectedLocation){
+                handleSubmit({
+                    location: selectedLocation,
+                    ...values,
+                    distanceFromMe: 10,
+                });
+            }
         },
     })
+
+    useEffect(() => {
+        function handleEscape(event: KeyboardEvent) {
+            const key = event.key; // const {key} = event; in ES6+
+            if (key === "Escape") {
+                closePopup()
+            }
+        }
+        document.addEventListener('keydown', handleEscape);
+        return () => {
+            window.removeEventListener('keydown', handleEscape);
+        }
+    }, []);
+
+    if(!isLoaded){
+        return <p>Loading...</p>
+    }
+    
     return (
-            <div className={`z-[9999] ${!isNewRescuePopupVisible ? 'hidden' : ''} fixed z-50 inset-0 bg-gray-900 bg-opacity-60 overflow-y-auto h-full w-full px-4`}>
+            <div className={`z-[9999] ${!isNewRescueOpen ? 'hidden' : ''} fixed z-50 inset-0 bg-gray-900 bg-opacity-60 overflow-y-auto h-full w-full px-4`}>
             <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" onSubmit={formik.handleSubmit}>
                 <div className="mb-4">
                     <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -65,6 +114,19 @@ export function PeoplePopup({ handleSubmit,closePopup  }: PeoplePopupProps) {
                 </button>
                 <input value='Fechar' type='button' className="bg-red-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onClick={closePopup}/>
             </form>
+            <GoogleMap
+                    options={mapOptions}
+                    zoom={12}
+                    center={mapCenter}
+                    mapTypeId={google.maps.MapTypeId.ROADMAP}
+                    mapContainerStyle={{ width: '100%', height: '100%' }}
+                    onClick={(clickEvent) => {
+                        const position = clickEvent.latLng?.toJSON();
+                        setSelectedLocation(position);
+                    }}
+                >
+                    {selectedLocation ? <MarkerF position={selectedLocation} /> : null}
+                </GoogleMap>
         </div>
     )
 }
