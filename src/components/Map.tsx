@@ -1,5 +1,5 @@
 'use client'
-import { GoogleMap, MarkerF, useLoadScript } from '@react-google-maps/api';
+import { Circle, GoogleMap, MarkerF, useLoadScript } from '@react-google-maps/api';
 import type { NextPage } from 'next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useListPersons } from '@/hooks/persons/persons.hook';
@@ -10,8 +10,8 @@ import PeopleCardsSection from './PeopleCardsSection';
 
 const MapComponent: NextPage = () => {
     const { data: { response }, refetch } = useListPersons();
-    const { currentRangeInMeters, setMaxDistance, isUsingCurrentLocation, setUsingCurrentLocation, setUserLocaion, userLocation, setNewRescueOpen  } = useRescueAppContext();
-    const [watch, setWatch]=useState<number | null>();
+    const { currentRangeInMeters, setMaxDistance, isUsingCurrentLocation, setUsingCurrentLocation, setUserLocaion, userLocation, setNewRescueOpen } = useRescueAppContext();
+    const [watch, setWatch] = useState<number | null>();
     const mapRef = useRef<google.maps.Map | undefined>();
     const onMapLoad = useCallback((map: google.maps.Map) => {
         mapRef.current = map;
@@ -37,27 +37,27 @@ const MapComponent: NextPage = () => {
     const { isLoaded } = useLoadScript({ googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY as string, libraries: libraries as any });
 
     useEffect(() => {
-            if(isUsingCurrentLocation){
-                const watchId = window.navigator.geolocation.watchPosition((position) => {
-                    setUserLocaion(() => ({
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                    }))
-                    if(!isUsingCurrentLocation){
-                        setUsingCurrentLocation(true);
-                    }
-                }, (err) => {
-                    if(err){
-                        console.error(err);
-                    }
-                    setUsingCurrentLocation(false);
-                })
-                setWatch(watchId);
-            }
-            if(!isUsingCurrentLocation){
-                window.navigator.geolocation.clearWatch(watch as number);
-                return setUsingCurrentLocation(false);
-            }
+        if (isUsingCurrentLocation) {
+            const watchId = window.navigator.geolocation.watchPosition((position) => {
+                setUserLocaion(() => ({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                }))
+                if (!isUsingCurrentLocation) {
+                    setUsingCurrentLocation(true);
+                }
+            }, (err) => {
+                if (err) {
+                    console.error(err);
+                }
+                setUsingCurrentLocation(false);
+            })
+            setWatch(watchId);
+        }
+        if (!isUsingCurrentLocation) {
+            window.navigator.geolocation.clearWatch(watch as number);
+            return setUsingCurrentLocation(false);
+        }
     }, [isUsingCurrentLocation]);
 
     useEffect(refetch, [userLocation, currentRangeInMeters]);
@@ -78,13 +78,22 @@ const MapComponent: NextPage = () => {
                 mapTypeId={google.maps.MapTypeId.ROADMAP}
                 mapContainerStyle={{ width: '100%', height: '100%' }}
                 onClick={(e) => {
-                    if(isUsingCurrentLocation){
+                    if (isUsingCurrentLocation) {
                         return;
                     }
                     setUserLocaion(e.latLng?.toJSON() || null);
                 }}
             >
-                {userLocation ? <MarkerF label='Eu' icon='http://maps.google.com/mapfiles/ms/icons/blue-dot.png' position={userLocation} /> : null}
+                {userLocation ?
+                    <>
+                        <MarkerF label='Eu' icon='http://maps.google.com/mapfiles/ms/icons/blue-dot.png' position={userLocation} />
+                        <Circle
+                            center={userLocation}
+                            radius={currentRangeInMeters}
+                            options={{fillOpacity: 0.15, strokeOpacity: 0.15}}
+                        />
+                    </>
+                    : null}
                 {nearbyPeople.map((config, index) => <MarkerF label={`#${index}`} key={index} position={config.location} />)}
             </GoogleMap>
             <section
@@ -116,9 +125,9 @@ const MapComponent: NextPage = () => {
                     onValueChange={setUsingCurrentLocation}
                 >
                     Usar minha localização
-                    { !isUsingCurrentLocation ? <p className="text-small text-default-500 relative top-100">Clique no mapa para procurar</p> : null}
+                    {!isUsingCurrentLocation ? <p className="text-small text-default-500 relative top-100">Clique no mapa para procurar</p> : null}
                 </Switch>
-                
+
             </section>
 
         </div>
