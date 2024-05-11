@@ -8,7 +8,7 @@ import { useRescueAppContext } from '@/app/context/app.context';
 
 const MapComponent: NextPage = () => {
     const { data: { response } } = useListPersons();
-    const { currentRangeInMeters, setMaxDistance, isUsingCurrentLocation, setUsingCurrentLocation } = useRescueAppContext();
+    const { currentRangeInMeters, setMaxDistance, isUsingCurrentLocation, setUsingCurrentLocation, setUserLocaion, userLocation } = useRescueAppContext();
 
     const nearbyPeople = response;
 
@@ -42,7 +42,14 @@ const MapComponent: NextPage = () => {
                 center={mapCenter}
                 mapTypeId={google.maps.MapTypeId.ROADMAP}
                 mapContainerStyle={{ width: '100%', height: '100%' }}
+                onClick={(e) => {
+                    if(isUsingCurrentLocation){
+                        return;
+                    }
+                    setUserLocaion(e.latLng?.toJSON() || null);
+                }}
             >
+                {userLocation ? <MarkerF position={userLocation} /> : null}
                 {nearbyPeople.map((config, index) => <MarkerF key={index} position={config.location} />)}
             </GoogleMap>
             <section
@@ -65,11 +72,26 @@ const MapComponent: NextPage = () => {
                     onChange={(value) => setMaxDistance(Array.isArray(value) ? value[0] : value)}
                     value={currentRangeInMeters}
                     getValue={(value) => `${value}m`}
-                    aria-label="Temperature"
+                    aria-label="distance"
                 />
                 <Switch
                     isSelected={isUsingCurrentLocation}
-                    onValueChange={setUsingCurrentLocation}
+                    onValueChange={(value) => {
+                        if(!value){
+                            return setUsingCurrentLocation(false);
+                        }
+                        if(value){
+                            window.navigator.geolocation.watchPosition((position) => {
+                                setUserLocaion(() => ({
+                                    lat: position.coords.latitude,
+                                    lng: position.coords.longitude,
+                                }))
+                                setUsingCurrentLocation(true);
+                            }, (err) => {
+                                setUsingCurrentLocation(false);
+                            })
+                        }
+                    }}
                 >
                     Usar minha localização
                     { !isUsingCurrentLocation ? <p className="text-small text-default-500 relative top-100">Clique no mapa para procurar</p> : null}

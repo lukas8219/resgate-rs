@@ -13,6 +13,7 @@ export function useRescueAppContext(){
     const [isNewRescueOpen, setNewRescueOpen]=useState<boolean>(false);
     const [maxDistance, setMaxDistance]=useState<number>(500);
     const [isUsingCurrentLocation, setUsingCurrentLocation]=useState<boolean>(true);
+    const [userLocation, setUserLocaion]=useState<google.maps.LatLngLiteral | null>(null);
 
     return {
         isNewRescueOpen,
@@ -21,6 +22,8 @@ export function useRescueAppContext(){
         setMaxDistance,
         isUsingCurrentLocation,
         setUsingCurrentLocation,
+        userLocation,
+        setUserLocaion,
         ...context,
     };
 }
