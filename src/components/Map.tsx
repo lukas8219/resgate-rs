@@ -1,16 +1,21 @@
 'use client'
 import { GoogleMap, MarkerF, useLoadScript } from '@react-google-maps/api';
 import type { NextPage } from 'next';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useListPersons } from '@/hooks/persons/persons.hook';
 import { Slider, Switch } from '@nextui-org/react';
 import { useRescueAppContext } from '@/app/context/app.context';
 import { Subject, throttleTime } from 'rxjs';
+import PeopleCardsSection from './PeopleCardsSection';
 
 const MapComponent: NextPage = () => {
     const { data: { response }, refetch } = useListPersons();
-    const { currentRangeInMeters, setMaxDistance, isUsingCurrentLocation, setUsingCurrentLocation, setUserLocaion, userLocation,  } = useRescueAppContext();
+    const { currentRangeInMeters, setMaxDistance, isUsingCurrentLocation, setUsingCurrentLocation, setUserLocaion, userLocation, setNewRescueOpen  } = useRescueAppContext();
     const [watch, setWatch]=useState<number | null>();
+    const mapRef = useRef<google.maps.Map | undefined>();
+    const onMapLoad = useCallback((map: google.maps.Map) => {
+        mapRef.current = map;
+    }, [])
 
     const nearbyPeople = response;
 
@@ -57,17 +62,19 @@ const MapComponent: NextPage = () => {
 
     useEffect(refetch, [userLocation, currentRangeInMeters]);
 
+
     if (!isLoaded) {
         return <p>Loading...</p>;
     }
 
     return (
-        <div style={{ width: '75vw', height: '100vh' }}>
+        <div className='w-screen h-screen'>
             <GoogleMap
                 id="main-map-places"
                 options={mapOptions}
                 zoom={12}
                 center={mapCenter}
+                onLoad={onMapLoad}
                 mapTypeId={google.maps.MapTypeId.ROADMAP}
                 mapContainerStyle={{ width: '100%', height: '100%' }}
                 onClick={(e) => {
@@ -77,18 +84,20 @@ const MapComponent: NextPage = () => {
                     setUserLocaion(e.latLng?.toJSON() || null);
                 }}
             >
-                {userLocation ? <MarkerF position={userLocation} /> : null}
-                {nearbyPeople.map((config, index) => <MarkerF key={index} position={config.location} />)}
+                {userLocation ? <MarkerF label='Eu' icon='http://maps.google.com/mapfiles/ms/icons/blue-dot.png' position={userLocation} /> : null}
+                {nearbyPeople.map((config, index) => <MarkerF label={`#${index}`} key={index} position={config.location} />)}
             </GoogleMap>
             <section
-                className='bg-white shadow-md w-[25%] rounded-lg p-4 flex flex-col gap-2 justify-center'
-                style={{
-                    position: 'relative',
-                    bottom: '10%',
-                    left: '0px',
-                    height: '10%'
-                }}
+                className='p-4 pt-0 fixed bottom-0 left-0 z-50 w-full h-1/8 bg-white border-t border-gray-200 dark:bg-white-700 dark:border-gray-600 shadow-md flex flex-col gap-2 justify-center'
             >
+                <PeopleCardsSection mapRef={mapRef} />
+                <button
+                    onClick={() => setNewRescueOpen!(() => true)}
+                    type="button"
+                    className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                    Preciso de um Resgate
+                </button>
                 <Slider
                     label="Distância"
                     key='slider'
