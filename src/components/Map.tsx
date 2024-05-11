@@ -23,7 +23,7 @@ const MapComponent: NextPage = () => {
         [nearbyPeople]
     );
 
-    const libraries = useMemo(() => ['maps'], [nearbyPeople]);
+    const libraries = useMemo(() => ['maps', 'geocoding'] as const, [nearbyPeople]);
     const { isLoaded } = useLoadScript({ googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY as string, libraries: libraries as any });
 
     if (!isLoaded) {
@@ -33,6 +33,7 @@ const MapComponent: NextPage = () => {
     return (
         <div style={{ width: '75vw', height: '100vh'}}>
             <GoogleMap
+                id="main-map-places"
                 options={mapOptions}
                 zoom={12}
                 center={mapCenter}
