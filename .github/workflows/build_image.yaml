@@ -34,6 +34,7 @@ jobs:
         env:
           IMAGE_BRANCH: ${{ github.ref }}
         run: |
+          echo "NEXT_PUBLIC_GOOGLE_MAPS_KEY=${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_TOKEN }}" > .env
           IMG_TAG=$(git log --date="short" --format="${IMAGE_BRANCH##refs/heads/}-%ct-%h" -n 1 ${IMAGE_BRANCH##refs/heads/} | sed 's/\//-/g')
           echo $IMG_TAG
           docker build . -t lukas8219/resgate-poc:$IMG_TAG
