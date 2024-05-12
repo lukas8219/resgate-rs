@@ -3,7 +3,7 @@ import { Circle, GoogleMap, MarkerF, useLoadScript } from '@react-google-maps/ap
 import type { NextPage } from 'next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useListPersons } from '@/hooks/persons/persons.hook';
-import { Slider, Switch } from '@nextui-org/react';
+import { Button, Slider, Switch } from '@nextui-org/react';
 import { useRescueAppContext } from '@/app/context/app.context';
 import { Subject, throttleTime } from 'rxjs';
 import PeopleCardsSection from './PeopleCardsSection';
@@ -127,7 +127,7 @@ const MapComponent: NextPage = () => {
                     Usar minha localização
                     {!isUsingCurrentLocation ? <p className="text-small text-default-500 relative top-100">Clique no mapa para procurar</p> : null}
                 </Switch>
-
+                <a className='small-text'><b>Contato:</b> lucas.polesello@lwpsoftwares.com <b>Instagram:</b> @luucaspole</a>
             </section>
 
         </div>
