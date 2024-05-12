@@ -5,6 +5,6 @@ export async function awaitConnection(){
     if(conn){
         return conn;
     }
-    conn = await mongoose.connect('mongodb://localhost:27017');
+    conn = await mongoose.connect(process.env.MONGODB_URL as string);
     return conn;
 }
