@@ -32,7 +32,7 @@ jobs:
 
       - name: Deploy
         env:
-          IMAGE_BRANCH= ${{ github.ref }}
+          IMAGE_BRANCH: ${{ github.ref }}
         run: |
           IMG_TAG=$(git log --date="short" --format="${IMAGE_BRANCH##refs/heads/}-%ct-%h" -n 1 ${IMAGE_BRANCH##refs/heads/} | sed 's/\//-/g')
           echo $IMG_TAG
