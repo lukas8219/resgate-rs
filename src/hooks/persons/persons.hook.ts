@@ -19,7 +19,7 @@ export function useCreatePerson(){
                 ...data,
                 location: [data.location.lng, data.location.lat], //mongo spatial queries use longitude before latitude
             }
-            return fetch('/api/persons', { method: 'POST', body: JSON.stringify(formatedData) }).then(() => queryClient.invalidateQueries({ queryKey: ['persons', '/']}));
+            return fetch(`${process.env.NEXT_PUBLIC_EXTERNAL_RESCUE_API || ''}/api/persons`, { method: 'POST', body: JSON.stringify(formatedData) }).then(() => queryClient.invalidateQueries({ queryKey: ['persons', '/']}));
         }
     })
 }
@@ -39,8 +39,9 @@ async function fetchPersons(lat: number | undefined, lng: number | undefined, ma
     if(!lat || !lng){
         return { response: [] };
     }
+    debugger;
     const urlParams = new URLSearchParams({ lat: String(lat), lng: String(lng), maxDistance: String(maxDistance) }).toString();
-    const response = await fetch(`/api/persons?${urlParams}`, { method: 'GET' });
+    const response = await fetch(`${process.env.NEXT_PUBLIC_EXTERNAL_RESCUE_API || ''}/api/persons?${urlParams}`, { method: 'GET' });
     const payload = await response.json();
     return {
         ...payload,
@@ -55,7 +56,7 @@ export function usePutPerson(){
             const formatedData = {
                 situation
             }
-            return fetch(`/api/persons/${data._id}`, { method: 'PUT', body: JSON.stringify(formatedData) }).then(() => queryClient.invalidateQueries({ queryKey: ['persons', '/']}));
+            return fetch(`${process.env.NEXT_PUBLIC_EXTERNAL_RESCUE_API || ''}/api/persons/${data._id}`, { method: 'PUT', body: JSON.stringify(formatedData) }).then(() => queryClient.invalidateQueries({ queryKey: ['persons', '/']}));
         }
     }) 
 }

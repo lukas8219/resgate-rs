@@ -73,6 +73,6 @@ class Person {
     rescuedFromIp?: string;
 }
 
-const PersonModel = getModelForClass(Person);
+const PersonModel = mongoose.models.Person || getModelForClass(Person);
 
 export default PersonModel;
