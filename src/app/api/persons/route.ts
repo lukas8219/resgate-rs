@@ -50,12 +50,13 @@ export async function GET(request: Request) {
 
 export async function POST(request: NextRequest){
     await awaitConnection();
+    const ip = request.headers.get('x-forwarded-for');
     const payload = await request.json();
-    logger.info(`creating ${JSON.stringify(payload)} from ip ${request.ip}`);
+    logger.info(`creating ${JSON.stringify(payload)} from ip ${ip}`);
     payload.location = {
         type: 'Point',
         coordinates: payload.location,
     }
-    const model = await new PersonModel({...payload, _id: new mongoose.Types.ObjectId(), createFromIp: request.ip, }).save();
+    const model = await new PersonModel({...payload, _id: new mongoose.Types.ObjectId(), createFromIp: ip, }).save();
     return Response.json(model.toJSON());
 }
