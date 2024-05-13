@@ -37,7 +37,6 @@ function formatPersonsPayload(data: RescueApiData): Rescue{
 
 async function fetchPersons(lat: number | undefined, lng: number | undefined, maxDistance: number){
     if(!lat || !lng){
-        console.log('lat lng is empty');
         return { response: [] };
     }
     const urlParams = new URLSearchParams({ lat: String(lat), lng: String(lng), maxDistance: String(maxDistance) }).toString();
@@ -47,6 +46,18 @@ async function fetchPersons(lat: number | undefined, lng: number | undefined, ma
         ...payload,
         response: payload.response.map(formatPersonsPayload),
     };
+}
+
+export function usePutPerson(){
+    return useMutation({
+        mutationFn: async (data: Partial<Rescue>) => {
+            const { situation } = data;
+            const formatedData = {
+                situation
+            }
+            return fetch(`/api/persons/${data._id}`, { method: 'PUT', body: JSON.stringify(formatedData) }).then(() => queryClient.invalidateQueries({ queryKey: ['persons', '/']}));
+        }
+    }) 
 }
 
 export function useListPersons(){
@@ -73,7 +84,6 @@ export function useListPersons(){
     return {
         ...useResults,
         refetch: () => {
-            console.log('calling next');
             refetchObservable.next();
         },
     }

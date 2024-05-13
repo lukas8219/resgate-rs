@@ -1,6 +1,6 @@
 'use client'
 import { Rescue, useRescueAppContext } from "@/app/context/app.context";
-import { useListPersons } from "@/hooks/persons/persons.hook";
+import { useListPersons, usePutPerson } from "@/hooks/persons/persons.hook";
 import { Button, Popover, PopoverContent, PopoverTrigger, Tooltip } from "@nextui-org/react";
 import { MutableRefObject, useEffect } from "react";
 
@@ -9,6 +9,7 @@ export interface PersonPopoverProps {
 }
 
 function PersonPopover(props: Rescue & PersonPopoverProps & { index: number }) {
+    const { mutateAsync } = usePutPerson();
     return (
         <Popover
         placement="top"
@@ -24,6 +25,7 @@ function PersonPopover(props: Rescue & PersonPopoverProps & { index: number }) {
                     <div className="text-small font-bold truncate">{props.name}</div>
                     <div className="text-tiny justify-end">à {props.distanceFromMe}m</div>
                     <Button onClick={() => props.onCentralize(props.location)} className="w-full">Centralizar</Button>
+                    <Button color="success" onClick={() => mutateAsync({ situation: 'rescued', _id: props._id })}><b>Resgatada</b></Button>
                 </div>
             </PopoverContent>
         </Popover>

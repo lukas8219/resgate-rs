@@ -1,7 +1,7 @@
 'use client'
 import { createContext, useContext, useState } from 'react';
 
-export type Rescue = { name: string, type?: string, location: google.maps.LatLngLiteral, distanceFromMe?: number };
+export type Rescue = { _id?: string, name: string, type?: string, situation: string, location: google.maps.LatLngLiteral, distanceFromMe?: number };
 
 export interface RescueAppContext {
 }

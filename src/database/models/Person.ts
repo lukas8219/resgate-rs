@@ -1,4 +1,4 @@
-import { index, prop, getModelForClass, mongoose } from "@typegoose/typegoose";
+import { index, prop, getModelForClass, mongoose, modelOptions, Prop } from "@typegoose/typegoose";
 
 export interface PersonLocation {
     latitude: number;
@@ -44,8 +44,12 @@ export class GeoJsonLocation {
     coordinates!: [number,number]
 }
 
-@index({ geoLocation: '2dsphere' }, {})
+@index({ location: '2dsphere' }, {})
+@modelOptions({ schemaOptions: { collection: 'persons' }})
 class Person {
+
+    @prop()
+    public _id!: mongoose.Types.ObjectId;
 
     @prop({ required: true })
     public name!: string;
@@ -61,6 +65,12 @@ class Person {
 
     @prop({ required: true, validate: locationValidator })
     public location!: GeoJsonLocation
+
+    @prop()
+    createdFromIp?: string;
+
+    @prop()
+    rescuedFromIp?: string;
 }
 
 const PersonModel = getModelForClass(Person);

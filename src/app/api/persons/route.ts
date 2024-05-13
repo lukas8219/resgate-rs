@@ -1,6 +1,8 @@
+import logger from "@/app/utils/logger";
 import { awaitConnection } from "@/database/connect"
-import PersonModel from '@/database/models/Person';
-import { URLSearchParams } from "url";
+import PersonModel, { PersonSituationEnum } from '@/database/models/Person';
+import { mongoose } from "@typegoose/typegoose";
+import { NextRequest } from "next/server";
 
 export async function GET(request: Request) {
     await awaitConnection();
@@ -12,11 +14,18 @@ export async function GET(request: Request) {
     const maxDistance = urlParams.get('maxDistance');
 
     if(!lat || !lng || !maxDistance){
-        const results = await PersonModel.find().lean(true);
+        const results = await PersonModel.find({
+            situation: {
+                $ne: PersonSituationEnum.Rescued,
+            },
+        }).lean(true);
         return Response.json({ response: results });
     }
 
     const results = await PersonModel.find({
+        situation: {
+            $ne: PersonSituationEnum.Rescued
+        },
         location: {
             $near: {
                 $geometry: { type: 'Point', coordinates: [lng, lat] },
@@ -24,7 +33,9 @@ export async function GET(request: Request) {
                 $maxDistance: Number(maxDistance) || 500,
             }
         }
-    }).lean(true);
+    })
+    .lean(true)
+    .select(['_id', 'location', 'name', 'type', 'situation'])
 
     return Response.json({
         response: results.map((r) => {
@@ -37,13 +48,14 @@ export async function GET(request: Request) {
     })
 }
 
-export async function POST(request: Request){
+export async function POST(request: NextRequest){
     await awaitConnection();
     const payload = await request.json();
+    logger.info(`creating ${JSON.stringify(payload)} from ip ${request.ip}`);
     payload.location = {
         type: 'Point',
         coordinates: payload.location,
     }
-    const model = await new PersonModel(payload).save();
+    const model = await new PersonModel({...payload, _id: new mongoose.Types.ObjectId(), createFromIp: request.ip, }).save();
     return Response.json(model.toJSON());
 }

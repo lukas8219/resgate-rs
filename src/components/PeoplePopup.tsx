@@ -109,8 +109,6 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
         return <p>Loading...</p>
     }
 
-    console.log('popup', isNewRescueOpen);
-
     return (
         <div className={`z-[9999] ${!isNewRescueOpen ? 'hidden' : ''} fixed z-50 inset-0 bg-gray-900 bg-opacity-60 w-full px-4 overflow-y-auto`}>
             <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" onSubmit={formik.handleSubmit}>
