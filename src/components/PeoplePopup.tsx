@@ -3,9 +3,20 @@ import { GoogleMap, MarkerF, useLoadScript } from '@react-google-maps/api';
 import { Rescue, useRescueAppContext } from '@/app/context/app.context';
 import { useFormik } from 'formik';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Autocomplete, AutocompleteItem } from '@nextui-org/react';
+import { Autocomplete, AutocompleteItem, Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, Spinner } from '@nextui-org/react';
 import { Subject, debounce, filter, interval } from 'rxjs';
-import { RescueApiData, useCreatePerson } from '@/hooks/persons/persons.hook';
+import { useCreatePerson } from '@/hooks/persons/persons.hook';
+import * as Yup from 'yup';
+import _ from 'lodash';
+
+const RescueSchema = Yup.object().shape({
+    name: Yup.string()
+        .min(2, 'Muito Curto')
+        .required('Por favor, preencha o nome!'),
+    type: Yup.string().oneOf(['adult', 'child', 'animal']).required('Escolha entre adulto, criança ou animal'),
+    situation: Yup.string().oneOf(['waiting-rescue', 'waiting-rescue-severe']).required('Escolha entre grave ou normal'),
+    extraInfo: Yup.string().min(0).max(500)
+});
 
 type PeoplePopupProps = {};
 
@@ -16,25 +27,32 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
     const [foundLocations, setSearchedLocations] = useState<any[]>([]);
     const mutatePersons = useCreatePerson();
 
-    const observable = useMemo(() => new Subject<string>(), [selectedLocation, isNewRescueOpen]);
+    const [isLocationLoading, setLocationLoading]=useState<boolean>(false);
+
+    const [step, setStep] = useState<number>(0);
+
+    const observable = useMemo(() => new Subject<string>(), []);
 
     useEffect(() => {
         observable.pipe(
             filter(Boolean),
             debounce(() => interval(500)),
         ).subscribe(async (query: string) => {
+            setLocationLoading(() => true);
             const results = await placesService?.geocode({
                 address: query
             })
             const formattedResults = results?.results.map((r) => {
                 return {
+                    placeId: r.place_id,
                     location: r.geometry.location,
                     address: r.formatted_address,
                 }
             })
             setSearchedLocations(() => formattedResults || []);
+            setLocationLoading(() => false);
         })
-    }, [isNewRescueOpen])
+    }, [])
 
     const mapCenter = useMemo(
         () => ({ lat: -30.00803257303225, lng: -51.19590017596934 }),
@@ -57,6 +75,7 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
         setNewRescueOpen!(false);
         formik.resetForm();
         setSelectedLocation(undefined);
+        setStep(0);
     }
 
     async function handleSubmit(data: Rescue) {
@@ -65,18 +84,19 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
         setSearchedLocations([]);
         setSelectedLocation(undefined);
         setNewRescueOpen!(false);
+        setStep(0);
     }
 
     const formik = useFormik({
         initialValues: {
             name: '',
-            type: 'male',
+            type: 'adult',
             situation: 'waiting-rescue',
-            extraInfo: ''
+            extraInfo: '',
         },
+        validationSchema: RescueSchema,
         onSubmit: values => {
-            formik.resetForm({ values: { name: '', type: 'male', extraInfo: '', situation: 'waiting-rescue' } });
-            debugger;
+            formik.resetForm({ values: { name: '', type: 'adult', extraInfo: '', situation: 'waiting-rescue' } });
             if (selectedLocation) {
                 const location = selectedLocation.toJSON();
                 handleSubmit({
@@ -105,85 +125,142 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
         setPlacesService(() => service);
     }, [selectedLocation, isNewRescueOpen])
 
+    const isReady = useMemo<boolean>(() => formik.isValid && !!selectedLocation, [formik.isValid, selectedLocation]);
+
     if (!isLoaded) {
         return <p>Loading...</p>
     }
 
     return (
-        <div className={`z-[9999] ${!isNewRescueOpen ? 'hidden' : ''} fixed z-50 inset-0 bg-gray-900 bg-opacity-60 w-full px-4 overflow-y-auto`}>
-            <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" onSubmit={formik.handleSubmit}>
-                <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Nome
-                    </label>
-                    <input name='name' value={formik.values.name} onChange={formik.handleChange} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="npme" type="text" placeholder="Nome" />
-                </div>
-                <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Tipo de Regaste
-                    </label>
-                    <select name='type' value={formik.values.type} onChange={formik.handleChange} className="shadow appearance-none border border-red-500 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        <option value='male'>Homem</option>
-                        <option value='female'>Mulher</option>
-                        <option value='child'>Criança</option>
-                        <option value='animal'>Animal</option>
-                    </select>
-                </div>
-                <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Informação Adicional
-                    </label>
-                    <input name='extraInfo' value={formik.values.extraInfo} onChange={formik.handleChange} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="npme" type="text" placeholder="Nome" />
-                </div>
-                <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Situação
-                    </label>
-                    <select name='situation' value={formik.values.situation} onChange={formik.handleChange} className="shadow appearance-none border border-red-500 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        <option value='waiting-rescue'>Esperando Resgate</option>
-                        <option value='waiting-rescue-severe'>Esperando Resgate - Grave</option>
-                        <option value='rescued'>Resgatado</option>
-                    </select>
-                </div>
-                <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                        Endereço - Ajuda se for c/ número!
-                    </label>
-                    <Autocomplete
-                        onInputChange={(input) => observable.next(input)}
-                        onSelectionChange={(key) => {
-                            const current = foundLocations?.find((item) => item.address === key);
-                            if (!current) {
-                                return;
-                            }
-                            setSelectedLocation(current.location);
-                        }}
-                        items={foundLocations}
-                    >
-                        {(location) => <AutocompleteItem key={`${location.address}`} value={location.address}>{location.address}</AutocompleteItem>}
-                    </Autocomplete>
-                </div>
-                <div className='w-100 h-[50vh] p-1'>
-                    <GoogleMap
-                        options={mapOptions}
-                        zoom={12}
-                        center={selectedLocation || mapCenter}
-                        mapTypeId={google.maps.MapTypeId.ROADMAP}
-                        onLoad={onLoad}
-                        mapContainerStyle={{ width: '100%', height: '100%' }}
-                        onClick={(clickEvent) => {
-                            const position = clickEvent.latLng;
-                            setSelectedLocation(() => position);
-                        }}
-                    >
-                        {selectedLocation ? <MarkerF position={selectedLocation} /> : null}
-                    </GoogleMap>
-                </div>
-                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
-                    Enviar
-                </button>
-                <input value='Fechar' type='button' className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" onClick={closePopup} />
-            </form>
-        </div>
+        <Modal onClose={closePopup} placement='center' isOpen={isNewRescueOpen}>
+            <ModalContent>
+                <ModalHeader>Novo Resgate</ModalHeader>
+                <ModalBody>
+                    <div>
+                        {step === 0 ?
+                            <>
+                                <Autocomplete
+                                    variant='bordered'
+                                    label='Endereço'
+                                    placeholder='Mais completo que der'
+                                    onInputChange={(input) => observable.next(input)}
+                                    onSelectionChange={(key) => {
+                                        const current = foundLocations?.find((item) => item.placeId === key);
+                                        if (!current) {
+                                            return;
+                                        }
+                                        setSelectedLocation(current.location);
+                                    }}
+                                    items={foundLocations}
+                                    endContent={isLocationLoading ? <Spinner /> : null}
+                                >
+                                    {(location) => <AutocompleteItem key={location.placeId} value={location.address}>{location.address}</AutocompleteItem>}
+                                </Autocomplete>
+                                <div className='w-100 h-[50vh] p-1'>
+                                    <GoogleMap
+                                        options={mapOptions}
+                                        zoom={12}
+                                        center={selectedLocation || mapCenter}
+                                        mapTypeId={google.maps.MapTypeId.ROADMAP}
+                                        onLoad={onLoad}
+                                        mapContainerStyle={{ width: '100%', height: '100%' }}
+                                        onClick={async (clickEvent) => {
+                                            const position = clickEvent.latLng;
+                                            setSelectedLocation(() => position);
+                                        }}
+                                    >
+                                        {selectedLocation ? <MarkerF position={selectedLocation} /> : null}
+                                    </GoogleMap>
+                                </div>
+                            </>
+                            : null}
+                        {step === 1 ?
+                            <>
+                                <form className='flex flex-col gap-y-2' onSubmit={formik.handleSubmit}>
+                                    <Input
+                                        isInvalid={!!formik.errors.name}
+                                        errorMessage={formik.errors.name}
+                                        required
+                                        label="Nome"
+                                        placeholder="Quem precisa de resgate?"
+                                        variant="bordered" name='name'
+                                        value={formik.values.name}
+                                        onChange={formik.handleChange}
+                                        id="nome"
+                                        type="text" />
+                                    <Select
+                                        label="Quem"
+                                        variant='bordered'
+                                        name='type'
+                                        placeholder='Adulto/Criança/Animal'
+                                        selectedKeys={[formik.values.type]}
+                                        selectionMode='single'
+                                        onChange={formik.handleChange}
+                                        required
+                                        isInvalid={!!formik.errors.type}
+                                        errorMessage={formik.errors.type}
+                                    >
+                                        <SelectItem key='adult' value='adult'>
+                                            Adulto
+                                        </SelectItem>
+                                        <SelectItem key='child' value='child'>
+                                            Criança
+                                        </SelectItem>
+                                        <SelectItem key='animal' value='animal'>
+                                            Animal
+                                        </SelectItem>
+                                    </Select>
+                                    <Input
+                                        isInvalid={!!formik.errors.extraInfo}
+                                        errorMessage={formik.errors.extraInfo}
+                                        label="Informação Adicional"
+                                        placeholder="Informação Adicional ou N/A"
+                                        variant="bordered"
+                                        name='extraInfo'
+                                        value={formik.values.extraInfo}
+                                        onChange={formik.handleChange}
+                                        id="extraInfo"
+                                        type="text" />
+                                    <Select
+                                        label="Situação"
+                                        variant='bordered'
+                                        name='situation'
+                                        placeholder='Esperando Resgate - Normal/Grave'
+                                        selectedKeys={[formik.values.situation]}
+                                        selectionMode='single'
+                                        onChange={formik.handleChange}
+                                        required
+                                        isInvalid={!!formik.errors.situation}
+                                        errorMessage={formik.errors.situation}
+                                    >
+                                        <SelectItem key='waiting-rescue' value='waiting-rescue'>
+                                            Normal
+                                        </SelectItem>
+                                        <SelectItem key='waiting-rescue-severe' value='waiting-rescue-severe'>
+                                            Grave
+                                        </SelectItem>
+                                    </Select>
+                                </form>
+                            </> : null}
+                    </div>
+                </ModalBody>
+                <ModalFooter>
+                    {step !== 0 ?
+                        <>
+                            <Button value='Anterior' type='button' variant='bordered' color='primary'  onClick={() => setStep((value) => --value)}>Anterior</Button>
+                        </> : null}
+                    {step !== 1 ? <>
+                        <Button disabled={!!!selectedLocation} className={`bg-${selectedLocation ? 'blue' : 'gray'}-500 hover:bg-${selectedLocation ? 'blue' : 'gray'}-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline`} type="submit" onClick={() => setStep((value) => ++value)}>
+                            {selectedLocation ? 'Próximo' : 'Aponte a localização!'}
+                        </Button>
+                    </> : null}
+                    {step === 1 ? <>
+                        <Button disabled={!isReady} className={`bg-${isReady ? 'blue' : 'gray'}-500 hover:bg-${isReady ? 'blue' : 'gray'}-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline`} type="submit" onClick={formik.submitForm}>
+                            Enviar
+                        </Button>
+                    </> : null}
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
     )
 }

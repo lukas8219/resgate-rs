@@ -39,7 +39,6 @@ async function fetchPersons(lat: number | undefined, lng: number | undefined, ma
     if(!lat || !lng){
         return { response: [] };
     }
-    debugger;
     const urlParams = new URLSearchParams({ lat: String(lat), lng: String(lng), maxDistance: String(maxDistance) }).toString();
     const response = await fetch(`${process.env.NEXT_PUBLIC_EXTERNAL_RESCUE_API || ''}/api/persons?${urlParams}`, { method: 'GET' });
     const payload = await response.json();

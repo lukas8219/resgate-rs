@@ -4,7 +4,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/hooks/persons/contexts";
 import MapComponent from "@/components/Map";
 import PeoplePopup from "@/components/PeoplePopup";
-import PeopleCardsSection from "@/components/PeopleCardsSection";
 
 export default function Home() {
   const context = useRescueAppContext()
