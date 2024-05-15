@@ -131,6 +131,8 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
         return <p>Loading...</p>
     }
 
+    console.log(step);
+
     return (
         <Modal onClose={closePopup} placement='center' isOpen={isNewRescueOpen}>
             <ModalContent>
@@ -249,13 +251,13 @@ export default function PeoplePopup({ }: PeoplePopupProps) {
                         <>
                             <Button value='Anterior' type='button' variant='bordered' color='primary'  onClick={() => setStep((value) => --value)}>Anterior</Button>
                         </> : null}
-                    {step !== 1 ? <>
-                        <Button disabled={!!!selectedLocation} className={`bg-${selectedLocation ? 'blue' : 'gray'}-500 hover:bg-${selectedLocation ? 'blue' : 'gray'}-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline`} type="submit" onClick={() => setStep((value) => ++value)}>
+                    {step === 0 ? <>
+                        <Button disabled={!!!selectedLocation} color={!!selectedLocation ? 'primary' : 'default'} type="submit" onClick={() => setStep((value) => ++value)}>
                             {selectedLocation ? 'Próximo' : 'Aponte a localização!'}
                         </Button>
                     </> : null}
                     {step === 1 ? <>
-                        <Button disabled={!isReady} className={`bg-${isReady ? 'blue' : 'gray'}-500 hover:bg-${isReady ? 'blue' : 'gray'}-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline`} type="submit" onClick={formik.submitForm}>
+                        <Button disabled={!isReady} color={isReady ? 'primary' : 'default'} type="submit" onClick={formik.submitForm}>
                             Enviar
                         </Button>
                     </> : null}
